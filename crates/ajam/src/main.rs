@@ -49,13 +49,13 @@ async fn main() -> process::ExitCode {
 
     let state_clone = state.clone();
     task::spawn(async move {
-        print_debug!("Starting OS activity monitor");
+        print_debug!("Starting OS activity monitor listener");
         state_clone.listen_os_events(rx).await;
     });
 
     let mut state_device = state.clone();
     task::spawn(async move {
-        print_debug!("Starting device input handler");
+        print_debug!("Starting device handler");
         state_device.connect_deck().await;
     });
 

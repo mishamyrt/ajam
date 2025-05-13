@@ -21,6 +21,7 @@ use tokio::time::sleep;
 use crate::{print_debug, print_error, print_info, print_warning, shell::run_command};
 
 const MANIFEST: &str = "manifest.json";
+
 const DEFAULT_APP: &str = "common";
 const DEFAULT_PAGE: &str = "main";
 
@@ -28,7 +29,6 @@ const DEFAULT_PAGE: &str = "main";
 pub(crate) struct StateData {
     active_app: String,
     active_page: String,
-
     profiles: HashMap<String, Profile>,
 }
 
@@ -95,7 +95,6 @@ impl State {
     }
 
     async fn render_page(&self, page: &Page) -> Option<()> {
-        print_debug!("render_page: {:?}", page);
         let images_to_render = page
             .buttons
             .iter()
@@ -250,7 +249,7 @@ impl State {
                             tokio::spawn(self.clone().listen_device_event(reader));
 
                             connected = true;
-                            let (page, _profile) = self.get_active_page().await.unwrap();
+                            let (_, page) = self.get_active_page().await.unwrap();
                             self.render_page(&page).await;
                             break;
                         }
@@ -274,7 +273,7 @@ impl State {
         }
     }
 
-    async fn get_active_page(&self) -> Option<(Page, Profile)> {
+    async fn get_active_page(&self) -> Option<(Profile, Page)> {
         let data_guard = self.data.read().await;
         let Some(profile) = data_guard.profiles.get(&data_guard.active_app) else {
             print_warning!("no profile for active app");
@@ -286,7 +285,7 @@ impl State {
             return None;
         };
 
-        Some((page.clone(), profile.clone()))
+        Some((profile.clone(), page.clone()))
     }
 
     async fn listen_device_event(self, dev_reader: Arc<AsyncDeviceStateReader>) {
@@ -301,28 +300,15 @@ impl State {
                     for update in updates {
                         match update {
                             DeviceStateUpdate::ButtonDown(key) => {
-                                let (_profile, page) = {
-                                    let data_guard = self.data.read().await;
-                                    let Some(profile) =
-                                        data_guard.profiles.get(&data_guard.active_app)
-                                    else {
-                                        print_warning!("no profile for active app");
-                                        continue;
-                                    };
-                                    let Some(page) = profile.pages.get(&data_guard.active_page)
-                                    else {
-                                        print_warning!("no page for active page");
-                                        continue;
-                                    };
-                                    print_debug!("active_page: {}", data_guard.active_page);
-                                    (profile.clone(), page.clone())
+                                let Some((_profile, page)) = self.get_active_page().await else {
+                                    print_warning!("no active page found");
+                                    continue;
                                 };
 
                                 let Some(button) = page.buttons.get(key as usize) else {
                                     print_warning!("no button for key: {}", key);
                                     continue;
                                 };
-
                                 let Some(button) = button else {
                                     print_warning!("no button for key: {}", key);
                                     continue;
@@ -337,57 +323,41 @@ impl State {
                                         }
                                     }
                                     Action::Command(command, args) => {
-                                        let output = run_command(command, args).await;
-                                        print_info!("command: {:?}", output);
+                                        if let Err(e) = run_command(command, args).await {
+                                            print_error!("error running command: {:?}", e);
+                                        }
                                     }
                                     Action::Navigate(target_page_name) => {
-                                        let mut data_guard = self.data.write().await;
-                                        data_guard.active_page = target_page_name.clone();
-                                        let Some(profile) =
-                                            data_guard.profiles.get(&data_guard.active_app)
-                                        else {
-                                            print_warning!("no profile for active app");
+                                        let Some((profile, _page)) = self.get_active_page().await else {
+                                            print_warning!("no active page found");
                                             continue;
                                         };
-                                        print_debug!("navigate to: {}", target_page_name);
-                                        print_debug!("profile: {:?}", profile);
+
                                         let Some(page) = profile.pages.get(target_page_name) else {
-                                            print_warning!(
-                                                "no page for target page: {}",
-                                                target_page_name
-                                            );
+                                            print_warning!("no page for target {} in profile {}", target_page_name, profile.app_id);
                                             continue;
                                         };
+
+                                        self.data.write().await.active_page = target_page_name.clone();
                                         self.render_page(page).await;
                                     }
                                 }
                             }
                             DeviceStateUpdate::ButtonUp(key) => {
-                                let (_profile, page) = {
-                                    let data_guard = self.data.read().await;
-                                    let Some(profile) =
-                                        data_guard.profiles.get(&data_guard.active_app)
-                                    else {
-                                        print_warning!("no profile for active app");
-                                        continue;
-                                    };
-                                    let Some(page) = profile.pages.get(&data_guard.active_page)
-                                    else {
-                                        print_warning!("no page for active page");
-                                        continue;
-                                    };
-                                    (profile.clone(), page.clone())
+                                let Some((_profile, page)) = self.get_active_page().await else {
+                                    print_warning!("no active page found");
+                                    continue;
                                 };
 
                                 let Some(button) = page.buttons.get(key as usize) else {
                                     print_warning!("no button for key: {}", key);
                                     continue;
                                 };
-
                                 let Some(button) = button else {
                                     print_warning!("no button for key: {}", key);
                                     continue;
                                 };
+    
                                 if let Action::Keys(keys) = &button.action {
                                     for combo in keys {
                                         if let Err(e) = performer.release(combo) {
@@ -398,13 +368,11 @@ impl State {
                             }
                             DeviceStateUpdate::EncoderTwist(dial, ticks) => {
                                 let encoder_action = {
-                                    let data_guard = self.data.read().await;
-                                    let Some(profile) =
-                                        data_guard.profiles.get(&data_guard.active_app)
-                                    else {
-                                        print_warning!("no profile for active app");
+                                    let Some((profile, _page)) = self.get_active_page().await else {
+                                        print_warning!("no active profile found");
                                         continue;
                                     };
+
                                     match profile.encoders.get(dial as usize) {
                                         Some(actions) => actions.clone(),
                                         None => continue,
