@@ -1,0 +1,115 @@
+{
+    "app_id": "com.todesktop.230313mzl4w4u92",
+    "pages": {
+        "main": {
+            "0": {
+                "image": "terminal.jpg",
+                "action": {
+                    "keys": [
+                        "cmd+\\"
+                    ]
+                }
+            },
+            "1": {
+                "image": "edit.jpg",
+                "action": {
+                    "keys": [
+                        "cmd+k"
+                    ]
+                }
+            },
+            "2": {
+                "image": "agent.jpg",
+                "action": {
+                    "keys": [
+                        "page_up"
+                    ]
+                }
+            },
+            "3": {
+                "image": "debug.jpg",
+                "action": {
+                    "navigate": "debug"
+                }
+            },
+            "4": {
+                "image": "search.jpg",
+                "action": {
+                    "keys": [
+                        "cmd+shift+f"
+                    ]
+                }
+            },
+            "5": {
+                "image": "ask.jpg",
+                "action": {
+                    "keys": [
+                        "home"
+                    ]
+                }
+            }
+        },
+        "debug": {
+            "0": {
+                "image": "start.jpg",
+                "action": {
+                    "keys": [
+                        "f5"
+                    ]
+                }
+            },
+            "1": {
+                "image": "step_over.jpg",
+                "action": {
+                    "keys": [
+                        "f10"
+                    ]
+                }
+            },
+            "2": {
+                "image": "step_into.jpg",
+                "action": {
+                    "keys": [
+                        "f11"
+                    ]
+                }
+            },
+            "3": {
+                "image": "back.jpg",
+                "action": {
+                    "navigate": "main"
+                }
+            },
+            "4": {
+                "image": "stop.jpg",
+                "action": {
+                    "keys": [
+                        "shift+f5"
+                    ]
+                }
+            },
+            "5": {
+                "image": "restart.jpg",
+                "action": {
+                    "keys": [
+                        "shift+cmd+f5"
+                    ]
+                }
+            }
+        }
+    },
+    "encoders": {
+        "0": [
+            "deck_brightness_down",
+            "deck_brightness_up"
+        ],
+        "1": [
+            "volume_down",
+            "volume_up"
+        ],
+        "2": [
+            "brightness_down",
+            "brightness_up"
+        ]
+    }
+}

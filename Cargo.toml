@@ -1,0 +1,30 @@
+[workspace]
+edition = "2021"
+members = ["crates/*"]
+resolver = "2"
+
+[workspace.package]
+edition = "2021"
+rust-version = "1.80"
+homepage = "https://github.com/mishamyrt/ajam"
+documentation = "https://github.com/mishamyrt/ajam"
+repository = "https://github.com/mishamyrt/ajam"
+authors = ["Mikhael Khrustik <misha@myrt.co>"]
+license = "MIT"
+
+[workspace.dependencies]
+ajam = { path = "crates/ajam" }
+ajam_keypress = { path = "crates/ajam_keypress" }
+ajam_events = { path = "crates/ajam_events" }
+ajam_profile = { path = "crates/ajam_profile" }
+image = { version = "0.25.1", default-features = false, features = [
+  "bmp",
+  "jpeg",
+] }
+tokio = { version = "1", optional = false, features = ["full"] }
+async-recursion = { version = "1.0.2", optional = false }
+ajazz-sdk = { version = "0.1.1", features = ["async"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+enigo = { git = "https://github.com/UE2020/enigo", rev = "4e61dfcb83e35445c4b9e75f24c4ef29fa598ce9" }
+

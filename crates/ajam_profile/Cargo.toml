@@ -1,0 +1,20 @@
+[package]
+name = "ajam_profile"
+version = "0.1.0"
+publish = false
+authors = { workspace = true }
+edition = "2021"
+rust-version = { workspace = true }
+homepage = { workspace = true }
+documentation = { workspace = true }
+repository = { workspace = true }
+license = { workspace = true }
+
+[dependencies]
+ajam_keypress = { workspace = true }
+enigo = { workspace = true, features = ["serde"] }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+image = { workspace = true }
+thiserror = "1.0"
+

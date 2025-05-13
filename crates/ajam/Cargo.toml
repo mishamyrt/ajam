@@ -1,0 +1,28 @@
+[package]
+name = "ajam"
+version = "0.1.0"
+publish = false
+authors = { workspace = true }
+edition = { workspace = true }
+rust-version = { workspace = true }
+homepage = { workspace = true }
+documentation = { workspace = true }
+repository = { workspace = true }
+license = { workspace = true }
+
+[dependencies]
+ajam_events = { workspace = true }
+ajam_profile = { workspace = true }
+enigo = { workspace = true, features = ["serde"] }
+serde = { workspace = true, features = ["derive"] }
+ajam_keypress = { workspace = true }
+image = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+async-recursion = { workspace = true }
+ajazz-sdk = { workspace = true, features = ["async"] }
+serde_json = { workspace = true }
+log = "0.4.26"
+colored = "3.0.0"
+fern = "0.6.1"
+chrono = "0.4"
+clap = { version = "4.5.38", features = ["derive"] }

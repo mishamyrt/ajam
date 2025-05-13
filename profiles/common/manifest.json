@@ -1,0 +1,83 @@
+{
+    "app_id": "common",
+    "pages": {
+        "main": {
+            "0": {
+                "image": "empty.jpg",
+                "action": {
+                    "keys": [
+                        "cmd+\\"
+                    ]
+                }
+            },
+            "1": {
+                "image": "empty.jpg",
+                "action": {
+                    "keys": [
+                        "cmd+k"
+                    ]
+                }
+            },
+            "2": {
+                "image": "empty.jpg",
+                "action": {
+                    "keys": [
+                        "cmd+l"
+                    ]
+                }
+            },
+            "3": {
+                "image": "empty.jpg",
+                "action": {
+                    "keys": [
+                        "home"
+                    ]
+                }
+            },
+            "4": {
+                "image": "empty.jpg",
+                "action": {
+                    "navigate": "debug"
+                }
+            },
+            "5": {
+                "image": "empty.jpg",
+                "action": {
+                    "keys": [
+                        "ctrl+cmd+r"
+                    ]
+                }
+            }
+        },
+        "debug": {
+            "0": {
+                "image": "empty.jpg",
+                "action": {
+                    "keys": [
+                        "cmd+shift+f"
+                    ]
+                }
+            },
+            "3": {
+                "image": "empty.jpg",
+                "action": {
+                    "navigate": "main"
+                }
+            }
+        }
+    },
+    "encoders": {
+        "0": [
+            "deck_brightness_down",
+            "deck_brightness_up"
+        ],
+        "1": [
+            "volume_down",
+            "volume_up"
+        ],
+        "2": [
+            "brightness_up",
+            "brightness_down"
+        ]
+    }
+}
