@@ -9,7 +9,7 @@ use tokio::sync::RwLock;
 use std::collections::HashMap;
 use std::path::Path;
 
-use ajam_profile::{Profile, ProfileError};
+use ajam_profile::{open_profiles, Profile, ProfileError};
 
 pub use events::StateEventsHandler;
 pub use connect::StateConnect;
@@ -36,25 +36,12 @@ impl StateData {
     }
 
     pub fn from_dir(dir: &Path) -> Result<Self, ProfileError> {
-        let mut state = Self::new();
-        if let Ok(entries) = std::fs::read_dir(dir) {
-            for entry in entries.flatten() {
-                let path = entry.path();
-                if !path.is_dir() {
-                    continue;
-                }
-
-                let manifest_path = path.join(MANIFEST);
-                if !manifest_path.exists() {
-                    continue;
-                }
-
-                let profile = Profile::from_file(&manifest_path, 6)?;
-                state.profiles.insert(profile.app_id.clone(), profile);
-            }
-        }
-
-        Ok(state)
+        let profiles = open_profiles(dir)?;
+        Ok(Self {
+            active_app: DEFAULT_APP.to_string(),
+            active_page: DEFAULT_PAGE.to_string(),
+            profiles,
+        })
     }
 }
 

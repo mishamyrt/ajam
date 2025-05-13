@@ -1,5 +1,4 @@
 {
-    "app_id": "common",
     "pages": {
         "main": {
             "0": {
@@ -30,6 +29,12 @@
                 "image": "bitwarden.jpg",
                 "action": {
                     "command": "open -a /Applications/Bitwarden.app"
+                }
+            },
+            "5": {
+                "image": "boltai.jpg",
+                "action": {
+                    "command": "open -a /Applications/BoltAI.app"
                 }
             }
         }

@@ -5,7 +5,6 @@ use std::path::Path;
 
 #[derive(Debug, Deserialize)]
 pub struct Manifest {
-    pub app_id: String,
     #[serde(default)]
     pub pages: HashMap<String, Page>,
     pub encoders: HashMap<char, Vec<String>>,

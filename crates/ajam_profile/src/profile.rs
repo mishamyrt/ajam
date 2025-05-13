@@ -1,9 +1,9 @@
-
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
 use crate::manifest::{Action as ManifestAction, Manifest, Page as ManifestPage};
+use crate::ProfileError;
 use ajam_keypress::KeyCombo;
 
 #[derive(Debug, Clone)]
@@ -70,15 +70,16 @@ impl Action {
 
 impl Profile {
     pub fn from_manifest(
+        app_id: String,
         manifest: Manifest,
-        path: PathBuf,
+        images_dir: PathBuf,
         buttons_per_page: usize,
     ) -> Result<Self, crate::ProfileError> {
         let mut pages = HashMap::new();
 
         for (page_name, manifest_page) in manifest.pages {
             let Some(page) =
-                Page::from_manifest_page(manifest_page, buttons_per_page, path.clone())
+                Page::from_manifest_page(&page_name, manifest_page, buttons_per_page, images_dir.clone())
             else {
                 return Err(crate::ProfileError::InvalidManifest);
             };
@@ -105,23 +106,38 @@ impl Profile {
             }
         }
         Ok(Profile {
-            app_id: manifest.app_id,
-            path,
+            app_id,
+            path: images_dir,
             pages,
             encoders,
             buttons_per_page,
         })
     }
 
-    pub fn from_file<P: AsRef<Path>>(
+    pub fn from_dir<P: AsRef<Path>>(
         path: P,
         buttons_per_page: usize,
     ) -> Result<Self, crate::ProfileError> {
         let path_buf = path.as_ref().to_path_buf();
-        let manifest = Manifest::from_file(&path_buf)?;
+        let manifest_path = path_buf.join("manifest.json");
+
+        if !manifest_path.exists() {
+            return Err(ProfileError::ManifestFileNotFound(
+                manifest_path.to_str().unwrap().to_string(),
+            ));
+        }
+
+        let manifest = Manifest::from_file(manifest_path)?;
+
+        let Some(app_id) = path_buf.file_name() else {
+            return Err(crate::ProfileError::InvalidAppId(
+                path_buf.to_str().unwrap().to_string(),
+            ));
+        };
         Self::from_manifest(
+            app_id.to_str().unwrap().to_string(),
             manifest,
-            path_buf.parent().unwrap_or(Path::new("")).to_path_buf(),
+            path_buf,
             buttons_per_page,
         )
     }
@@ -129,6 +145,7 @@ impl Profile {
 
 impl Page {
     fn from_manifest_page(
+        page_name: &str,
         manifest_page: ManifestPage,
         buttons_per_page: usize,
         images_dir: PathBuf,
@@ -141,7 +158,7 @@ impl Page {
                 if index < buttons_per_page {
                     let action = Action::from_manifest(button.action)?;
                     buttons[index] = Some(Button {
-                        image: images_dir.join(button.image),
+                        image: images_dir.join(page_name).join(button.image),
                         action,
                     });
                 }
@@ -158,4 +175,21 @@ impl Clone for Page {
             buttons: self.buttons.clone(),
         }
     }
+}
+
+pub fn open_profiles(dir: &Path) -> Result<HashMap<String, Profile>, ProfileError> {
+    let mut profiles = HashMap::new();
+    if let Ok(entries) = std::fs::read_dir(dir) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if !path.is_dir() {
+                continue;
+            }
+
+            let profile = Profile::from_dir(&path, 6)?;
+            profiles.insert(profile.app_id.clone(), profile);
+        }
+    }
+
+    Ok(profiles)
 }
