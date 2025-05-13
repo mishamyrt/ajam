@@ -3,81 +3,49 @@
     "pages": {
         "main": {
             "0": {
-                "image": "empty.jpg",
+                "image": "music.jpg",
                 "action": {
-                    "keys": [
-                        "cmd+\\"
-                    ]
+                    "command": "open -a /Applications/YandexMusic.app"
                 }
             },
             "1": {
-                "image": "empty.jpg",
+                "image": "telegram.jpg",
                 "action": {
-                    "keys": [
-                        "cmd+k"
-                    ]
+                    "command": "open -a /Applications/Telegram.app"
                 }
             },
             "2": {
-                "image": "empty.jpg",
+                "image": "iterm.jpg",
                 "action": {
-                    "keys": [
-                        "cmd+l"
-                    ]
+                    "command": "open -a /Applications/iTerm.app"
                 }
             },
             "3": {
-                "image": "empty.jpg",
+                "image": "mail.jpg",
                 "action": {
-                    "keys": [
-                        "home"
-                    ]
+                    "command": "open -a /System/Applications/Mail.app"
                 }
             },
             "4": {
-                "image": "empty.jpg",
+                "image": "bitwarden.jpg",
                 "action": {
-                    "navigate": "debug"
-                }
-            },
-            "5": {
-                "image": "empty.jpg",
-                "action": {
-                    "keys": [
-                        "ctrl+cmd+r"
-                    ]
-                }
-            }
-        },
-        "debug": {
-            "0": {
-                "image": "empty.jpg",
-                "action": {
-                    "keys": [
-                        "cmd+shift+f"
-                    ]
-                }
-            },
-            "3": {
-                "image": "empty.jpg",
-                "action": {
-                    "navigate": "main"
+                    "command": "open -a /Applications/Bitwarden.app"
                 }
             }
         }
     },
     "encoders": {
         "0": [
-            "deck_brightness_down",
-            "deck_brightness_up"
+            "shift+f14",
+            "shift+f15"
         ],
         "1": [
             "volume_down",
             "volume_up"
         ],
         "2": [
-            "brightness_up",
-            "brightness_down"
+            "ctrl+f14",
+            "ctrl+f15"
         ]
     }
 }

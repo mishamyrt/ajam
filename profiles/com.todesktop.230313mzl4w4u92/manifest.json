@@ -100,16 +100,16 @@
     },
     "encoders": {
         "0": [
-            "deck_brightness_down",
-            "deck_brightness_up"
+            "shift+f14",
+            "shift+f15"
         ],
         "1": [
             "volume_down",
             "volume_up"
         ],
         "2": [
-            "brightness_down",
-            "brightness_up"
+            "ctrl+f14",
+            "ctrl+f15"
         ]
     }
 }

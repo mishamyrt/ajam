@@ -19,7 +19,7 @@ macro_rules! print_error {
 macro_rules! print_info {
     ($($arg:tt)*) => {
         let message = $crate::logging::format_log(&format!($($arg)*));
-        log::info!("{}", message.bright_yellow());
+        log::info!("{message}");
     }
 }
 

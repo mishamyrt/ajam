@@ -141,20 +141,22 @@ impl KeyCombo {
         if self.modifiers.contains(Modifier::Alt) {
             enigo.key(Key::Alt, Press)?;
         }
+
         for key in self.keys.clone() {
             enigo.key(key, Click)?;
         }
-        if self.modifiers.contains(Modifier::Alt) {
-            enigo.key(Key::Alt, Release)?;
-        }
-        if self.modifiers.contains(Modifier::Shift) {
-            enigo.key(Key::Shift, Release)?;
+
+        if self.modifiers.contains(Modifier::Ctrl) {
+            enigo.key(Key::Control, Release)?;
         }
         if self.modifiers.contains(Modifier::Meta) {
             enigo.key(Key::Meta, Release)?;
         }
-        if self.modifiers.contains(Modifier::Ctrl) {
-            enigo.key(Key::Control, Release)?;
+        if self.modifiers.contains(Modifier::Shift) {
+            enigo.key(Key::Shift, Release)?;
+        }
+        if self.modifiers.contains(Modifier::Alt) {
+            enigo.key(Key::Alt, Release)?;
         }
 
         Ok(())

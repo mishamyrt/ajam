@@ -1,11 +1,10 @@
 mod logging;
 mod state;
-mod shell;
 mod cli;
 
 use clap::Parser;
 use fern::Dispatch;
-use state::{State, StateData};
+use state::{State, StateConnect, StateData, StateEventsHandler};
 use std::{process, path::Path};
 use tokio::task;
 use colored::Colorize;
@@ -41,7 +40,10 @@ async fn main() -> process::ExitCode {
         }
     };
 
-    print_debug!("Loaded profiles: {:?}", data);
+    print_info!("Loaded {} profiles", data.profiles.len());
+    for (app_id, profile) in data.profiles.iter() {
+        print_warning!("App: {} - {} pages", app_id, profile.pages.len());
+    }
 
     let state = State::from_data(data);
 
@@ -53,9 +55,10 @@ async fn main() -> process::ExitCode {
         state_clone.listen_os_events(rx).await;
     });
 
-    let mut state_device = state.clone();
+    let state_clone = state.clone();
     task::spawn(async move {
         print_debug!("Starting device handler");
+        let mut state_device = state_clone;
         state_device.connect_deck().await;
     });
 
