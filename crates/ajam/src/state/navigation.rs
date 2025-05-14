@@ -119,7 +119,6 @@ impl StateNavigator for State {
             print_debug!("Already on profile {}, skipping", profile);
             return Ok(());
         }
-
         match self.navigate_to(profile, DEFAULT_PAGE).await {
             Ok(_) => Ok(()),
             Err(NavigationError::NoProfile) => {
@@ -134,55 +133,32 @@ impl StateNavigator for State {
     }
 
     async fn navigate_to_next_page(&self) -> Result<(), NavigationError> {
-        let (profile_name, page_name) = {
-            let navigation = self.navigation.read().await;
-            (navigation.profile.clone(), navigation.page.clone())
-        };
-
-        let profile = {
-            let profiles_guard = self.profiles.read().await;
-            if let Some(profile) = profiles_guard.get(&profile_name) {
-                profile.clone()
-            } else {
-                return Err(NavigationError::NoProfile);
-            }
-        };
-
-        let current_page_index = profile.pages_order.iter().position(|p| p == &page_name).unwrap();
-        let mut next_page_index = current_page_index + 1;
-        if next_page_index >= profile.pages_order.len() {
-            next_page_index = 0;
-        }
-
-        let next_page_name = profile.pages_order[next_page_index].clone();
-
-        self.navigate_to(&profile_name, &next_page_name).await
+        self.navigate_page_offset(1).await
     }
     
     async fn navigate_to_previous_page(&self) -> Result<(), NavigationError> {
-        let (profile_name, page_name) = {
-            let navigation = self.navigation.read().await;
-            (navigation.profile.clone(), navigation.page.clone())
-        };
+        self.navigate_page_offset(-1).await
+    }
+}
 
-        let profile = {
-            let profiles_guard = self.profiles.read().await;
-            if let Some(profile) = profiles_guard.get(&profile_name) {
-                profile.clone()
-            } else {
-                return Err(NavigationError::NoProfile);
-            }
-        };
+impl State {
+    async fn get_current_profile_and_page(&self) -> (String, String) {
+        let navigation = self.navigation.read().await;
+        (navigation.profile.clone(), navigation.page.clone())
+    }
 
-        let current_page_index = profile.pages_order.iter().position(|p| p == &page_name).unwrap();
-        let previous_page_index = if current_page_index == 0 {
-            profile.pages_order.len() - 1
-        } else {
-            current_page_index - 1
-        };
+    async fn get_profile(&self, profile_name: &str) -> Result<crate::state::Profile, NavigationError> {
+        let profiles_guard = self.profiles.read().await;
+        profiles_guard.get(profile_name).cloned().ok_or(NavigationError::NoProfile)
+    }
 
-        let previous_page_name = profile.pages_order[previous_page_index].clone();
-
-        self.navigate_to(&profile_name, &previous_page_name).await
+    async fn navigate_page_offset(&self, offset: isize) -> Result<(), NavigationError> {
+        let (profile_name, page_name) = self.get_current_profile_and_page().await;
+        let profile = self.get_profile(&profile_name).await?;
+        let len = profile.pages_order.len() as isize;
+        let current_index = profile.pages_order.iter().position(|p| p == &page_name).unwrap() as isize;
+        let new_index = (current_index + offset + len) % len;
+        let new_page = &profile.pages_order[new_index as usize];
+        self.navigate_to(&profile_name, new_page).await
     }
 }
