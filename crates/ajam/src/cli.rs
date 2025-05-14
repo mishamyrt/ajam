@@ -1,4 +1,23 @@
 use clap::Parser;
+use clap::Subcommand;
+
+#[derive(Debug, Subcommand)]
+pub(crate) enum Command {
+    /// Help message for read.
+    Start {
+        /// The directory containing the profiles
+        #[clap(short, long)]
+        profiles: Option<String>,
+    },
+    /// Help message for write.
+    Stop,
+    Run {
+        /// The profile to run
+        #[clap(short, long)]
+        profiles: String,
+    },
+    Status,
+}
 
 /// Utility to add ticket id to commit message
 #[derive(Parser)]
@@ -12,7 +31,6 @@ pub(crate) struct Cli {
     #[arg(long)]
     pub no_color: bool,
 
-    /// The directory containing the profiles
-    #[arg(short, long)]
-    pub profiles: String,
+    #[clap(subcommand)]
+    pub command: Command,
 }

@@ -17,6 +17,7 @@ ajam = { path = "crates/ajam" }
 ajam_keypress = { path = "crates/ajam_keypress" }
 ajam_events = { path = "crates/ajam_events" }
 ajam_profile = { path = "crates/ajam_profile" }
+ajam_launchctl = { path = "crates/ajam_launchctl" }
 image = { version = "0.25.1", default-features = false, features = [
   "bmp",
   "jpeg",

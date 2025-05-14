@@ -1,0 +1,25 @@
+[package]
+name = "ajam_launchctl"
+version = "0.0.0"
+publish = false
+authors = { workspace = true }
+edition = "2021"
+rust-version = { workspace = true }
+homepage = { workspace = true }
+documentation = { workspace = true }
+repository = { workspace = true }
+license = { workspace = true }
+
+[dependencies]
+ajam_keypress = { workspace = true }
+enigo = { workspace = true, features = ["serde"] }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+image = { workspace = true }
+thiserror = "1.0"
+libc = "0.2.172"
+async-trait = "0.1.88"
+tokio = { workspace = true, features = ["process", "rt-multi-thread", "macros"] }
+plist = "1.7.1"
+serde_derive = "1.0.219"
+

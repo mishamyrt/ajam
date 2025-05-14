@@ -13,13 +13,15 @@ license = { workspace = true }
 [dependencies]
 ajam_events = { workspace = true }
 ajam_profile = { workspace = true }
+ajam_launchctl = { workspace = true }
+ajam_keypress = { workspace = true }
+ajazz-sdk = { workspace = true, features = ["async"] }
+
 enigo = { workspace = true, features = ["serde"] }
 serde = { workspace = true, features = ["derive"] }
-ajam_keypress = { workspace = true }
 image = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 async-recursion = { workspace = true }
-ajazz-sdk = { workspace = true, features = ["async"] }
 serde_json = { workspace = true }
 log = "0.4.26"
 colored = "3.0.0"
