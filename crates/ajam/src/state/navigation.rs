@@ -20,7 +20,7 @@ pub enum NavigationError {
     RenderError(#[from] RenderError),
 }
 
-const DEFAULT_PROFILE: &str = "common";
+pub const DEFAULT_PROFILE: &str = "common";
 const DEFAULT_PAGE: &str = "main";
 
 pub trait StateNavigator {
@@ -28,6 +28,11 @@ pub trait StateNavigator {
     async fn navigate_to_page(&self, page: &str) -> Result<(), NavigationError>;
     async fn navigate_to_default(&self) -> Result<(), NavigationError>;
     async fn navigate_to_profile_or_default(&self, profile: &str) -> Result<(), NavigationError>;
+
+    async fn toggle_home(&self) -> Result<(), NavigationError>;
+
+    async fn navigate_to_next_page(&self) -> Result<(), NavigationError>;
+    async fn navigate_to_previous_page(&self) -> Result<(), NavigationError>;
 }
 
 impl StateNavigator for State {
@@ -64,6 +69,38 @@ impl StateNavigator for State {
         self.navigate_to(DEFAULT_PROFILE, DEFAULT_PAGE).await
     }
 
+    async fn toggle_home(&self) -> Result<(), NavigationError> {
+        let profile_name = {
+            let navigation_guard = self.navigation.read().await;
+            navigation_guard.profile.clone()
+        };
+
+        let active_profile = {
+            let active_profile_guard = self.active_profile.read().await;
+            active_profile_guard.clone()
+        };
+
+        if active_profile == DEFAULT_PROFILE && profile_name == DEFAULT_PROFILE {
+            print_debug!("Already on default profile and no saved profile, skipping");
+            return Ok(());
+        }
+
+        if profile_name != DEFAULT_PROFILE {
+            let mut active_profile_guard = self.active_profile.write().await;
+            *active_profile_guard = profile_name.clone();
+            return self.navigate_to_default().await;
+        }
+
+        if profile_name == DEFAULT_PROFILE && active_profile != DEFAULT_PROFILE {
+            let mut active_profile_guard = self.active_profile.write().await;
+            let profile_to_restore = active_profile.clone();
+            *active_profile_guard = DEFAULT_PROFILE.to_string();
+            return self.navigate_to_profile_or_default(&profile_to_restore).await;
+        }
+
+        Ok(())
+    }
+
     async fn navigate_to_page(&self, page: &str) -> Result<(), NavigationError> {
         let profile = {
             let navigation = self.navigation.read().await;
@@ -74,10 +111,78 @@ impl StateNavigator for State {
     }
 
     async fn navigate_to_profile_or_default(&self, profile: &str) -> Result<(), NavigationError> {
+        let profile_name = {
+            let navigation_guard = self.navigation.read().await;
+            navigation_guard.profile.clone()
+        };
+        if profile_name == profile {
+            print_debug!("Already on profile {}, skipping", profile);
+            return Ok(());
+        }
+
         match self.navigate_to(profile, DEFAULT_PAGE).await {
             Ok(_) => Ok(()),
-            Err(NavigationError::NoProfile) => self.navigate_to_default().await,
+            Err(NavigationError::NoProfile) => {
+                if profile_name == DEFAULT_PROFILE {
+                    print_debug!("Already on default profile, skipping");
+                    return Ok(());
+                }
+                self.navigate_to_default().await
+            },
             Err(e) => Err(e),
         }
+    }
+
+    async fn navigate_to_next_page(&self) -> Result<(), NavigationError> {
+        let (profile_name, page_name) = {
+            let navigation = self.navigation.read().await;
+            (navigation.profile.clone(), navigation.page.clone())
+        };
+
+        let profile = {
+            let profiles_guard = self.profiles.read().await;
+            if let Some(profile) = profiles_guard.get(&profile_name) {
+                profile.clone()
+            } else {
+                return Err(NavigationError::NoProfile);
+            }
+        };
+
+        let current_page_index = profile.pages_order.iter().position(|p| p == &page_name).unwrap();
+        let mut next_page_index = current_page_index + 1;
+        if next_page_index >= profile.pages_order.len() {
+            next_page_index = 0;
+        }
+
+        let next_page_name = profile.pages_order[next_page_index].clone();
+
+        self.navigate_to(&profile_name, &next_page_name).await
+    }
+    
+    async fn navigate_to_previous_page(&self) -> Result<(), NavigationError> {
+        let (profile_name, page_name) = {
+            let navigation = self.navigation.read().await;
+            (navigation.profile.clone(), navigation.page.clone())
+        };
+
+        let profile = {
+            let profiles_guard = self.profiles.read().await;
+            if let Some(profile) = profiles_guard.get(&profile_name) {
+                profile.clone()
+            } else {
+                return Err(NavigationError::NoProfile);
+            }
+        };
+
+        let current_page_index = profile.pages_order.iter().position(|p| p == &page_name).unwrap();
+        let previous_page_index = if current_page_index == 0 {
+            profile.pages_order.len() - 1
+        } else {
+            current_page_index - 1
+        };
+
+        let previous_page_name = profile.pages_order[previous_page_index].clone();
+
+        self.navigate_to(&profile_name, &previous_page_name).await
     }
 }

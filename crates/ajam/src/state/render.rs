@@ -4,8 +4,9 @@ use ajam_profile::{Page, Profile};
 use ajazz_sdk::AjazzError;
 use image::{open, DynamicImage};
 use thiserror::Error;
+use colored::Colorize;
 
-use crate::State;
+use crate::{print_error, State};
 
 #[derive(Error, Debug)]
 pub enum RenderError {
@@ -18,7 +19,7 @@ pub enum RenderError {
     #[error("error writing to device")]
     DeviceWriteError(#[from] AjazzError),
 
-    #[error("error loading image: {0}")]
+    #[error("error loading image")]
     ImageError(#[from] image::ImageError),
 
     #[error("no active page")]
@@ -35,6 +36,7 @@ impl RenderState {
                 match open(button.image.clone()) {
                     Ok(image) => images.push(Some(image)),
                     Err(e) => {
+                        print_error!("error loading image: {} {:?}", button.image.clone().to_string_lossy(), e);
                         return Err(RenderError::ImageError(e));
                     }
                 }

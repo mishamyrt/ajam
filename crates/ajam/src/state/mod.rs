@@ -27,6 +27,7 @@ struct NavigationState {
 pub(crate) struct State {
     dev: Arc<RwLock<Option<AsyncAjazz>>>,
     profiles: Arc<RwLock<HashMap<String, Profile>>>,
+    active_profile: Arc<RwLock<String>>,
     navigation: Arc<RwLock<NavigationState>>,
     brightness: Arc<AtomicU8>,
 }
@@ -36,6 +37,7 @@ impl State {
         Self {
             dev: Arc::new(RwLock::new(None)),
             profiles: Arc::new(RwLock::new(profiles)),
+            active_profile: Arc::new(RwLock::new(DEFAULT_PROFILE.to_string())),
             navigation: Arc::new(RwLock::new(NavigationState {
                 profile: DEFAULT_PROFILE.to_string(),
                 page: DEFAULT_PAGE.to_string(),

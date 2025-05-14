@@ -13,6 +13,11 @@ use crate::{print_debug, print_error, print_warning};
 use colored::Colorize;
 
 use super::navigation::StateNavigator;
+use super::navigation::DEFAULT_PROFILE;
+
+const KEY_PREVIOUS: u8 = 6;
+const KEY_HOME: u8 = 7;
+const KEY_NEXT: u8 = 8;
 
 pub trait StateEventsHandler {
     async fn listen_device_events(&self, dev_reader: Arc<AsyncDeviceStateReader>);
@@ -29,7 +34,6 @@ impl StateEventsHandler for State {
                     if last_bundle_id.as_ref() != Some(&bundle_id) {
                         let profile = {
                             let navigation_guard = self.navigation.read().await;
-
                             navigation_guard.profile.clone()
                         };
 
@@ -37,6 +41,11 @@ impl StateEventsHandler for State {
                             continue;
                         }
                         last_bundle_id = Some(bundle_id.clone());
+
+                        {
+                            let mut active_profile_guard = self.active_profile.write().await;
+                            *active_profile_guard = DEFAULT_PROFILE.to_string();
+                        }
 
                         if let Err(e) = self.navigate_to_profile_or_default(&bundle_id).await {
                             print_error!("error navigating to profile: {:?}", e);
@@ -59,6 +68,37 @@ impl StateEventsHandler for State {
                     for update in updates {
                         match update {
                             DeviceStateUpdate::ButtonDown(key) => {
+                                match key {
+                                    KEY_PREVIOUS => {
+                                        match self.navigate_to_previous_page().await {
+                                            Ok(_) => {}
+                                            Err(e) => {
+                                                print_error!("error navigating to previous page: {:?}", e);
+                                            }
+                                        }
+                                        continue;
+                                    }
+                                    KEY_NEXT => {
+                                        match self.navigate_to_next_page().await {
+                                            Ok(_) => {}
+                                            Err(e) => {
+                                                print_error!("error navigating to next page: {:?}", e);
+                                            }
+                                        }
+                                        continue;
+                                    }
+                                    KEY_HOME => {
+                                        match self.toggle_home().await {
+                                            Ok(_) => {}
+                                            Err(e) => {
+                                                print_error!("error toggling home: {:?}", e);
+                                            }
+                                        }
+                                        continue;
+                                    }
+                                    _ => {}
+                                };
+
                                 let Some((_profile, page)) = self.get_active_page().await else {
                                     print_warning!("no active page found");
                                     continue;

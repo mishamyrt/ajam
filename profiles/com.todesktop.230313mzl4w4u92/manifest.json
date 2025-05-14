@@ -1,4 +1,8 @@
 {
+    "pages_order": [
+        "main",
+        "debug"
+    ],
     "pages": {
         "main": {
             "0": {

@@ -17,6 +17,7 @@ pub struct Profile {
     pub app_id: String,
     pub path: PathBuf,
     pub pages: HashMap<String, Page>,
+    pub pages_order: Vec<String>,
     pub encoders: Vec<Option<EncoderActions>>,
     pub buttons_per_page: usize,
 }
@@ -109,6 +110,7 @@ impl Profile {
             app_id,
             path: images_dir,
             pages,
+            pages_order: manifest.pages_order,
             encoders,
             buttons_per_page,
         })

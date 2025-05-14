@@ -1,4 +1,8 @@
 {
+    "pages_order": [
+        "main",
+        "dev"
+    ],
     "pages": {
         "main": {
             "0": {
@@ -14,9 +18,9 @@
                 }
             },
             "2": {
-                "image": "iterm.jpg",
+                "image": "amneziavpn.jpg",
                 "action": {
-                    "command": "open -a /Applications/iTerm.app"
+                    "command": "open -a /Applications/AmneziaVPN.app"
                 }
             },
             "3": {
@@ -35,6 +39,32 @@
                 "image": "boltai.jpg",
                 "action": {
                     "command": "open -a /Applications/BoltAI.app"
+                }
+            }
+        },
+        "dev": {
+            "0": {
+                "image": "cursor.jpg",
+                "action": {
+                    "command": "open -a /Applications/Cursor.app"
+                }
+            },
+            "1": {
+                "image": "docker.jpg",
+                "action": {
+                    "command": "open -a /Applications/Docker.app"
+                }
+            },
+            "2": {
+                "image": "iterm.jpg",
+                "action": {
+                    "command": "open -a /Applications/iTerm.app"
+                }
+            },
+            "3": {
+                "image": "sqlpro.jpg",
+                "action": {
+                    "command": "open -a '/Applications/SQLPro for Postgres.app'"
                 }
             }
         }

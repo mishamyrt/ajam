@@ -6,6 +6,7 @@ use std::path::Path;
 #[derive(Debug, Deserialize)]
 pub struct Manifest {
     #[serde(default)]
+    pub pages_order: Vec<String>,
     pub pages: HashMap<String, Page>,
     pub encoders: HashMap<char, Vec<String>>,
 }
