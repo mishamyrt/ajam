@@ -1,9 +1,10 @@
 mod manifest;
 mod profile;
+mod materialized_page;
 
 pub use profile::{Profile, Page, Action, EncoderActions, open_profiles};
 pub use manifest::{Manifest, ButtonConfig};
-
+pub use materialized_page::{MaterializedPage, ImageLoader, MaterializedPageError};
 use thiserror::Error;
 
 #[derive(Error, Debug)]

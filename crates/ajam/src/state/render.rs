@@ -1,12 +1,11 @@
 use std::sync::atomic::Ordering;
 
-use ajam_profile::{Page, Profile};
-use ajazz_sdk::AjazzError;
-use image::{open, DynamicImage};
 use thiserror::Error;
-use colored::Colorize;
 
-use crate::{print_error, State};
+use ajam_profile::{MaterializedPage, Page, Profile};
+use ajazz_sdk::AjazzError;
+
+use crate::State;
 
 #[derive(Error, Debug)]
 pub enum RenderError {
@@ -24,32 +23,13 @@ pub enum RenderError {
 
     #[error("no active page")]
     NoActivePage,
-}
 
-struct RenderState(Vec<Option<DynamicImage>>);
-
-impl RenderState {
-    pub fn from_page(page: &Page) -> Result<Self, RenderError> {
-        let mut images = Vec::new();
-        for button in page.buttons.iter() {
-            if let Some(button) = button {
-                match open(button.image.clone()) {
-                    Ok(image) => images.push(Some(image)),
-                    Err(e) => {
-                        print_error!("error loading image: {} {:?}", button.image.clone().to_string_lossy(), e);
-                        return Err(RenderError::ImageError(e));
-                    }
-                }
-            } else {
-                images.push(None);
-            }
-        }
-        Ok(Self(images))
-    }
+    #[error("error loading page")]
+    PageLoadError(#[from] ajam_profile::MaterializedPageError),
 }
 
 impl State {
-    async fn render_state(&self, state: &RenderState) -> Result<(), RenderError> {
+    async fn render_state(&self, state: &MaterializedPage) -> Result<(), RenderError> {
         // Maybe too short lock?
         let dev = {
             let dev_guard = self.dev.read().await;
@@ -100,8 +80,11 @@ impl StateRender for State {
     }
 
     async fn render_page(&self, page: &Page) -> Result<(), RenderError> {
-        let state = RenderState::from_page(page)?;
-        self.render_state(&state).await
+        let page = {
+            let mut image_loader = self.image_loader.lock().await;
+            image_loader.open_page(page).await?
+        };
+        self.render_state(&page).await
     }
 
     async fn render_active_page(&self) -> Result<(), RenderError> {

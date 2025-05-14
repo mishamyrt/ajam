@@ -18,4 +18,5 @@ serde_json = { workspace = true }
 image = { workspace = true }
 thiserror = "1.0"
 serde_yaml = "0.9.34"
-
+lru = "0.12"
+tokio = { workspace = true, features = ["full"] }

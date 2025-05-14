@@ -7,9 +7,9 @@ use ajazz_sdk::AsyncAjazz;
 use std::collections::HashMap;
 use std::sync::atomic::AtomicU8;
 use std::sync::Arc;
-use tokio::sync::RwLock;
+use tokio::sync::{Mutex, RwLock};
 
-use ajam_profile::{Page, Profile};
+use ajam_profile::{ImageLoader, Page, Profile};
 
 pub use connect::StateConnect;
 pub use events::StateEventsHandler;
@@ -30,6 +30,7 @@ pub(crate) struct State {
     active_profile: Arc<RwLock<String>>,
     navigation: Arc<RwLock<NavigationState>>,
     brightness: Arc<AtomicU8>,
+    image_loader: Arc<Mutex<ImageLoader>>,
 }
 
 impl State {
@@ -43,6 +44,7 @@ impl State {
                 page: DEFAULT_PAGE.to_string(),
             })),
             brightness: Arc::new(AtomicU8::new(100)),
+            image_loader: Arc::new(Mutex::new(ImageLoader::new(120))),
         }
     }
 
