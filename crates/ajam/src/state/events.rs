@@ -1,4 +1,3 @@
-use std::sync::atomic::Ordering;
 use std::sync::{mpsc, Arc};
 
 use ajam_events::ActivityEvent;
@@ -9,9 +8,11 @@ use ajazz_sdk::DeviceStateUpdate;
 use tokio::process::Command;
 
 use crate::state::render::StateRender;
-use crate::state::{State, DEFAULT_APP};
-use crate::{print_debug, print_error, print_info, print_warning};
+use crate::state::State;
+use crate::{print_debug, print_error, print_warning};
 use colored::Colorize;
+
+use super::navigation::StateNavigator;
 
 pub trait StateEventsHandler {
     async fn listen_device_events(&self, dev_reader: Arc<AsyncDeviceStateReader>);
@@ -26,42 +27,19 @@ impl StateEventsHandler for State {
             match event {
                 ActivityEvent::AppChange(bundle_id) => {
                     if last_bundle_id.as_ref() != Some(&bundle_id) {
-                        let page = {
-                            let mut data_guard = self.data.write().await;
-                            if data_guard.active_app == bundle_id {
-                                continue;
-                            }
-                            last_bundle_id = Some(bundle_id.clone());
+                        let profile = {
+                            let navigation_guard = self.navigation.read().await;
 
-                            if data_guard.profiles.contains_key(&bundle_id) {
-                                print_info!("updating active app: {}", bundle_id);
-                                data_guard.active_app = bundle_id.to_string();
-                            } else {
-                                print_warning!("no profile for active app: {}", bundle_id);
-                                data_guard.active_app = DEFAULT_APP.to_string();
-                            }
-
-                            let Some(profile) = data_guard.profiles.get(&data_guard.active_app)
-                            else {
-                                print_warning!("no profile for active app: {}", bundle_id);
-                                continue;
-                            };
-
-                            let Some(page) = profile.pages.get(&data_guard.active_page) else {
-                                print_warning!("no page for active page");
-                                continue;
-                            };
-
-                            page.clone()
+                            navigation_guard.profile.clone()
                         };
 
-                        let has_device = {
-                            let dev_guard = self.dev.read().await;
-                            dev_guard.is_some()
-                        };
+                        if profile == bundle_id {
+                            continue;
+                        }
+                        last_bundle_id = Some(bundle_id.clone());
 
-                        if has_device {
-                            self.render_page(&page).await;
+                        if let Err(e) = self.navigate_to_profile_or_default(&bundle_id).await {
+                            print_error!("error navigating to profile: {:?}", e);
                         }
                     }
                 }
@@ -110,24 +88,11 @@ impl StateEventsHandler for State {
                                         }
                                     }
                                     Action::Navigate(target_page_name) => {
-                                        let Some((profile, _page)) = self.get_active_page().await
-                                        else {
-                                            print_warning!("no active page found");
-                                            continue;
-                                        };
-
-                                        let Some(page) = profile.pages.get(target_page_name) else {
-                                            print_warning!(
-                                                "no page for target {} in profile {}",
-                                                target_page_name,
-                                                profile.app_id
-                                            );
-                                            continue;
-                                        };
-
-                                        self.data.write().await.active_page =
-                                            target_page_name.clone();
-                                        self.render_page(page).await;
+                                        if let Err(e) =
+                                            self.navigate_to_page(target_page_name).await
+                                        {
+                                            print_error!("error navigating to page: {:?}", e);
+                                        }
                                     }
                                 }
                             }
@@ -178,12 +143,9 @@ impl StateEventsHandler for State {
                                     if action.keys[0] == DECK_BRIGHTNESS_UP
                                         || action.keys[0] == DECK_BRIGHTNESS_DOWN
                                     {
-                                        if ticks > 0 {
-                                            self.brightness.fetch_add(5, Ordering::Relaxed);
-                                        } else {
-                                            self.brightness.fetch_sub(5, Ordering::Relaxed);
+                                        if let Err(e) = self.set_brightness(ticks * 5).await {
+                                            print_error!("error setting brightness: {:?}", e);
                                         }
-                                        self.update_brightness().await;
                                         continue;
                                     }
 

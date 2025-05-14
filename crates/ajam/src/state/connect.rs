@@ -62,8 +62,12 @@ impl StateConnect for State {
                             });
 
                             connected = true;
-                            let (_, page) = self.get_active_page().await.unwrap();
-                            self.render_page(&page).await;
+                            if let Err(e) = self.apply_brightness().await {
+                                print_error!("failed to apply brightness: {}", e);
+                            }
+                            if let Err(e) = self.render_active_page().await {
+                                print_error!("failed to render active page: {}", e);
+                            }
                             break;
                         }
                         Err(e) => {

@@ -2,9 +2,10 @@ mod logging;
 mod state;
 mod cli;
 
+use ajam_profile::open_profiles;
 use clap::Parser;
 use fern::Dispatch;
-use state::{State, StateConnect, StateData, StateEventsHandler};
+use state::{State, StateConnect, StateEventsHandler};
 use std::{process, path::Path};
 use tokio::task;
 use colored::Colorize;
@@ -31,21 +32,19 @@ async fn main() -> process::ExitCode {
     setup_logging(cli.verbose, cli.no_color);
 
     let profiles_dir = Path::new(&cli.profiles);
-
-    let data = match StateData::from_dir(profiles_dir) {
-        Ok(data) => data,
+    let profiles = match open_profiles(profiles_dir) {
+        Ok(profiles) => profiles,
         Err(e) => {
             print_error!("Failed to load profiles: {}", e);
             return process::ExitCode::FAILURE;
         }
     };
-
-    print_info!("Loaded {} profiles", data.profiles.len());
-    for (app_id, profile) in data.profiles.iter() {
+    print_info!("Loaded {} profiles", profiles.len());
+    for (app_id, profile) in profiles.iter() {
         print_warning!("App: {} - {} pages", app_id, profile.pages.len());
     }
 
-    let state = State::from_data(data);
+    let state = State::with_profiles(profiles);
 
     let (monitor, rx) = ActivityMonitor::new();
 
