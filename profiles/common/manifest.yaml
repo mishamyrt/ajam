@@ -1,0 +1,66 @@
+pages_order:
+  - main
+  - dev
+
+pages:
+  main:
+    0:
+      image: main/music.jpg
+      action:
+        command: open -a /Applications/YandexMusic.app
+    1:
+      image: main/telegram.jpg
+      action:
+        command: open -a /Applications/Telegram.app
+    2:
+      image: main/amneziavpn.jpg
+      action:
+        command: open -a /Applications/AmneziaVPN.app
+    3:
+      image: main/mail.jpg
+      action:
+        command: open -a /System/Applications/Mail.app
+    4:
+      image: main/bitwarden.jpg
+      action:
+        command: open -a /Applications/Bitwarden.app
+    5:
+      image: main/boltai.jpg
+      action:
+        command: open -a /Applications/BoltAI.app
+  dev:
+    0:
+      image: dev/cursor.jpg
+      action:
+        command: open -a /Applications/Cursor.app
+    1:
+      image: dev/docker.jpg
+      action:
+        command: open -a /Applications/Docker.app
+    2:
+      image: dev/iterm.jpg
+      action:
+        command: open -a /Applications/iTerm.app
+    3:
+      image: dev/sqlpro.jpg
+      action:
+        command: open -a '/Applications/SQLPro for Postgres.app'
+
+encoders:
+  0:
+    minus:
+      keys: shift+f14
+    plus:
+      keys: shift+f15
+  1:
+    minus:
+      keys: volume_down
+    plus:
+      keys: volume_up
+    click:
+      keys: volume_mute
+  2:
+    minus:
+      keys: ctrl+f14
+    plus:
+      keys: ctrl+f15

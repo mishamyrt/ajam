@@ -7,13 +7,19 @@ use serde::{de::{value::Error as DeError, IntoDeserializer}, Deserializer};
 use serde::{de::Visitor, Deserialize};
 use std::fmt;
 
-pub const DECK_BRIGHTNESS_UP: Key = Key::Other(2047483647);
-pub const DECK_BRIGHTNESS_DOWN: Key = Key::Other(2047483648);
+pub const ILLUMINATION_UP: Key = Key::IlluminationUp;
+pub const ILLUMINATION_DOWN: Key = Key::IlluminationDown;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct KeyCombo {
     pub modifiers: Modifiers,
     pub keys: Vec<Key>,
+}
+
+impl KeyCombo {
+    pub fn is_illumination(&self) -> bool {
+        self.keys.len() == 1 && (self.keys[0] == ILLUMINATION_UP || self.keys[0] == ILLUMINATION_DOWN)
+    }
 }
 
 fn parse_key(input: &str) -> Option<Key> {
@@ -55,6 +61,9 @@ fn parse_key(input: &str) -> Option<Key> {
         "brightness_up" => Some(Key::BrightnessUp),
         "brightness_down" => Some(Key::BrightnessDown),
 
+        "illumination_up" => Some(Key::IlluminationUp),
+        "illumination_down" => Some(Key::IlluminationDown),
+
         "f1" => Some(Key::F1),
         "f2" => Some(Key::F2),
         "f3" => Some(Key::F3),
@@ -75,9 +84,6 @@ fn parse_key(input: &str) -> Option<Key> {
         "f18" => Some(Key::F18),
         "f19" => Some(Key::F19),
         "f20" => Some(Key::F20),
-
-        "deck_brightness_up" => Some(DECK_BRIGHTNESS_UP),
-        "deck_brightness_down" => Some(DECK_BRIGHTNESS_DOWN),
         _ => None,
     }
 }

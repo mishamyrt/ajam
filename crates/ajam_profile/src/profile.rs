@@ -6,10 +6,13 @@ use crate::manifest::{Action as ManifestAction, Manifest, Page as ManifestPage};
 use crate::ProfileError;
 use ajam_keypress::KeyCombo;
 
+const MANIFEST_FILE_NAME: &str = "manifest.yaml";
+
 #[derive(Debug, Clone)]
 pub struct EncoderActions {
-    pub increment: KeyCombo,
-    pub decrement: KeyCombo,
+    pub plus: Action,
+    pub minus: Action,
+    pub click: Option<Action>,
 }
 
 #[derive(Debug, Clone)]
@@ -24,8 +27,8 @@ pub struct Profile {
 
 #[derive(Debug, Clone)]
 pub enum Action {
-    Keys(Vec<KeyCombo>),
-    Command(String, Vec<String>),
+    Keys(KeyCombo),
+    Command(String),
     Navigate(String),
 }
 
@@ -41,30 +44,16 @@ pub struct Page {
 }
 
 impl Action {
-    pub fn from_manifest(action: ManifestAction) -> Option<Self> {
+    pub fn from_manifest(action: ManifestAction) -> Result<Self, crate::ProfileError> {
         match action {
             ManifestAction::Keys { keys } => {
-                let mut combos = Vec::new();
-                for k in keys {
-                    let combo = KeyCombo::from_str(&k);
-                    if let Ok(combo) = combo {
-                        combos.push(combo);
-                    } else {
-                        return None;
-                    }
-                }
-                Some(Action::Keys(combos))
+                let Ok(combo) = KeyCombo::from_str(&keys) else {
+                    return Err(crate::ProfileError::InvalidKeyCombo(keys));
+                };
+                Ok(Action::Keys(combo))
             }
-            ManifestAction::Command { command } => {
-                let args = command.split_whitespace().collect::<Vec<&str>>();
-                let command = args[0];
-                let args = args[1..].to_vec();
-                Some(Action::Command(
-                    command.to_string(),
-                    args.iter().map(|s| s.to_string()).collect(),
-                ))
-            }
-            ManifestAction::Navigate { navigate } => Some(Action::Navigate(navigate.to_string())),
+            ManifestAction::Command { command } => Ok(Action::Command(command.to_string())),
+            ManifestAction::Navigate { navigate } => Ok(Action::Navigate(navigate.to_string())),
         }
     }
 }
@@ -79,11 +68,8 @@ impl Profile {
         let mut pages = HashMap::new();
 
         for (page_name, manifest_page) in manifest.pages {
-            let Some(page) =
-                Page::from_manifest_page(&page_name, manifest_page, buttons_per_page, images_dir.clone())
-            else {
-                return Err(crate::ProfileError::InvalidManifest);
-            };
+            let page =
+                Page::from_manifest_page(manifest_page, buttons_per_page, images_dir.clone())?;
             pages.insert(page_name, page);
         }
 
@@ -92,18 +78,15 @@ impl Profile {
         for (key_char, encoder) in manifest.encoders {
             if let Some(index) = key_char.to_digit(10) {
                 let index = index as usize;
-                if encoder.len() == 2 {
-                    let Ok(decrement) = KeyCombo::from_str(&encoder[0]) else {
-                        return Err(crate::ProfileError::InvalidManifest);
-                    };
-                    let Ok(increment) = KeyCombo::from_str(&encoder[1]) else {
-                        return Err(crate::ProfileError::InvalidManifest);
-                    };
-                    encoders[index] = Some(EncoderActions {
-                        increment,
-                        decrement,
-                    });
-                }
+                let click = match encoder.click {
+                    Some(action) => Some(Action::from_manifest(action)?),
+                    None => None,
+                };
+                encoders[index] = Some(EncoderActions {
+                    plus: Action::from_manifest(encoder.plus)?,
+                    minus: Action::from_manifest(encoder.minus)?,
+                    click,
+                });
             }
         }
         Ok(Profile {
@@ -121,7 +104,7 @@ impl Profile {
         buttons_per_page: usize,
     ) -> Result<Self, crate::ProfileError> {
         let path_buf = path.as_ref().to_path_buf();
-        let manifest_path = path_buf.join("manifest.json");
+        let manifest_path = path_buf.join(MANIFEST_FILE_NAME);
 
         if !manifest_path.exists() {
             return Err(ProfileError::ManifestFileNotFound(
@@ -147,11 +130,10 @@ impl Profile {
 
 impl Page {
     fn from_manifest_page(
-        page_name: &str,
         manifest_page: ManifestPage,
         buttons_per_page: usize,
         images_dir: PathBuf,
-    ) -> Option<Self> {
+    ) -> Result<Self, crate::ProfileError> {
         let mut buttons: Vec<Option<Button>> = vec![None; buttons_per_page];
 
         for (key_char, button) in manifest_page.buttons {
@@ -160,14 +142,14 @@ impl Page {
                 if index < buttons_per_page {
                     let action = Action::from_manifest(button.action)?;
                     buttons[index] = Some(Button {
-                        image: images_dir.join(page_name).join(button.image),
+                        image: images_dir.join(button.image),
                         action,
                     });
                 }
             }
         }
 
-        Some(Page { buttons })
+        Ok(Page { buttons })
     }
 }
 

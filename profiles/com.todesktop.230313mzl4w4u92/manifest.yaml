@@ -1,0 +1,74 @@
+pages_order:
+  - main
+  - debug
+
+pages:
+  main:
+    0:
+      image: main/terminal.jpg
+      action:
+        keys: ctrl+\
+    1:
+      image: main/edit.jpg
+      action:
+        keys: ctrl+k
+    2:
+      image: main/agent.jpg
+      action:
+        keys: page_up
+    3:
+      image: main/debug.jpg
+      action:
+        navigate: debug
+    4:
+      image: main/search.jpg
+      action:
+        keys: cmd+shift+f
+    5:
+      image: main/ask.jpg
+      action:
+        keys: home
+  debug:
+    0:
+      image: debug/start.jpg
+      action:
+        keys: f5
+    1:
+      image: debug/step_over.jpg
+      action:
+        keys: f10
+    2:
+      image: debug/step_into.jpg
+      action:
+        keys: f11
+    3:
+      image: debug/back.jpg
+      action:
+        navigate: main
+    4:
+      image: debug/stop.jpg
+      action:
+        keys: shift+f5
+    5:
+      image: debug/restart.jpg
+      action:
+        keys: shift+cmd+f5
+
+encoders:
+  0:
+    minus:
+      keys: shift+f14
+    plus:
+      keys: shift+f15
+  1:
+    minus:
+      keys: volume_down
+    plus:
+      keys: volume_up
+    click:
+      keys: volume_mute
+  2:
+    minus:
+      keys: ctrl+f14
+    plus:
+      keys: ctrl+f15

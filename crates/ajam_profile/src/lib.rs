@@ -1,7 +1,7 @@
 mod manifest;
 mod profile;
 
-pub use profile::{Profile, Page, Action, open_profiles};
+pub use profile::{Profile, Page, Action, EncoderActions, open_profiles};
 pub use manifest::{Manifest, ButtonConfig};
 
 use thiserror::Error;
@@ -16,6 +16,12 @@ pub enum ProfileError {
 
     #[error("JSON error: {0}")]
     JSONError(#[from] serde_json::Error),
+
+    #[error("YAML error: {0}")]
+    YAMLError(#[from] serde_yaml::Error),
+
+    #[error("Invalid key combo: {0}")]
+    InvalidKeyCombo(String),
 
     #[error("Invalid manifest")]
     InvalidManifest,
