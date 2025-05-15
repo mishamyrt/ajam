@@ -1,6 +1,6 @@
 use crate::{print_debug, print_error, print_warning};
 use crate::state::State;
-use ajazz_sdk::{list_devices, new_hidapi};
+use ajazz_sdk::{list_devices, new_hidapi, AjazzError};
 use std::time::Duration;
 use tokio::time::sleep;
 use colored::Colorize;
@@ -15,9 +15,19 @@ const DEVICE_KEEPALIVE_CHECK_INTERVAL: u64 = 5;
 
 pub trait StateConnect {
     async fn connect_deck(&mut self);
+    async fn disconnect_deck(&self) -> Result<(), AjazzError>;
 }
 
 impl StateConnect for State {
+    async fn disconnect_deck(&self) -> Result<(), AjazzError> {
+        let mut dev_guard = self.dev.write().await;
+        if let Some(dev) = dev_guard.as_ref() {
+            dev.clear_all_button_images().await?;
+            *dev_guard = None;
+        }
+        Ok(())
+    }
+
     async fn connect_deck(&mut self) {
         let hid_api = match new_hidapi() {
             Ok(hid) => hid,

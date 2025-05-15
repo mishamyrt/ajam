@@ -8,7 +8,7 @@ use clap::Parser;
 use fern::Dispatch;
 use state::{State, StateConnect, StateEventsHandler};
 use std::{path::{Path, PathBuf}, process};
-use tokio::task;
+use tokio::{task, signal};
 use colored::Colorize;
 use cli::{Cli, Command};
 
@@ -60,9 +60,40 @@ async fn run_listener(profiles_dir: &str) -> process::ExitCode {
         state_device.connect_deck().await;
     });
 
+    let state_clone = state.clone();
+    task::spawn(async move {
+        handle_signals(state_clone).await;
+    });
+
     monitor.start_listening();
 
     process::ExitCode::SUCCESS
+}
+
+async fn handle_signals(state: State) {
+    let mut term_signal = signal::unix::signal(signal::unix::SignalKind::terminate())
+        .expect("Failed to create SIGTERM signal handler");
+    
+    tokio::select! {
+        _ = signal::ctrl_c() => {
+            print_info!("Received Ctrl+C, shutting down");
+        }
+        _ = term_signal.recv() => {
+            print_info!("Received SIGTERM, shutting down");
+        }
+    }
+    
+    match state.disconnect_deck().await {
+        Ok(_) => {
+            print_info!("Screen cleared");
+        },
+        Err(e) => {
+            print_error!("Failed to clear screen: {}", e);
+            process::exit(1);
+        },
+    }
+    
+    process::exit(0);
 }
 
 #[tokio::main]
