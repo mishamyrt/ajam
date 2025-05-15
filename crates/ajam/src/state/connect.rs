@@ -88,7 +88,6 @@ impl StateConnect for State {
 
                 if !connected {
                     attempt_count += 1;
-                    print_debug!("attempt {}/{MAX_CONNECTION_ATTEMPTS}. retrying in {CONNECTION_RETRY_INTERVAL} seconds...", attempt_count);
                     sleep(Duration::from_secs(CONNECTION_RETRY_INTERVAL)).await;
                 }
             }

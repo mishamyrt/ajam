@@ -1,6 +1,5 @@
-use std::sync::{mpsc, Arc};
+use std::sync::Arc;
 
-use ajam_events::ActivityEvent;
 use ajam_keypress::Performer;
 use ajam_profile::{Action, EncoderActions};
 use ajazz_sdk::asynchronous::AsyncDeviceStateReader;
@@ -12,8 +11,7 @@ use crate::state::State;
 use crate::{print_debug, print_error, print_warning};
 use colored::Colorize;
 
-use super::navigation::DEFAULT_PROFILE;
-use super::navigation::{NavigationError, StateNavigator};
+use super::navigation::{NavigationError, Navigator};
 
 const KEY_PREVIOUS: u8 = 6;
 const KEY_HOME: u8 = 7;
@@ -97,41 +95,9 @@ impl State {
 }
 pub trait StateEventsHandler {
     async fn listen_device_events(&self, dev_reader: Arc<AsyncDeviceStateReader>);
-    async fn listen_os_events(&self, rx: mpsc::Receiver<ActivityEvent>);
 }
 
 impl StateEventsHandler for State {
-    async fn listen_os_events(&self, rx: mpsc::Receiver<ActivityEvent>) {
-        let mut last_bundle_id: Option<String> = None;
-
-        while let Ok(event) = rx.recv() {
-            match event {
-                ActivityEvent::AppChange(bundle_id) => {
-                    if last_bundle_id.as_ref() != Some(&bundle_id) {
-                        let profile = {
-                            let navigation_guard = self.navigation.read().await;
-                            navigation_guard.profile.clone()
-                        };
-
-                        if profile == bundle_id {
-                            continue;
-                        }
-                        last_bundle_id = Some(bundle_id.clone());
-
-                        {
-                            let mut active_profile_guard = self.active_profile.write().await;
-                            *active_profile_guard = DEFAULT_PROFILE.to_string();
-                        }
-
-                        if let Err(e) = self.navigate_to_profile_or_default(&bundle_id).await {
-                            print_error!("error navigating to profile: {:?}", e);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     async fn listen_device_events(&self, dev_reader: Arc<AsyncDeviceStateReader>) {
         let Ok(mut performer) = Performer::new() else {
             print_error!("failed to create performer");

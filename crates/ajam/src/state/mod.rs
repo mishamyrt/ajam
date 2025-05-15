@@ -2,6 +2,7 @@ mod connect;
 mod events;
 mod render;
 mod navigation;
+mod activity;
 
 use ajazz_sdk::AsyncAjazz;
 use std::collections::HashMap;
@@ -11,8 +12,8 @@ use tokio::sync::{Mutex, RwLock};
 
 use ajam_profile::{ImageLoader, Page, Profile};
 
-pub use connect::StateConnect;
-pub use events::StateEventsHandler;
+pub(crate) use connect::StateConnect;
+pub(crate) use activity::ActivityHandler;
 
 pub const DEFAULT_PROFILE: &str = "common";
 pub const DEFAULT_PAGE: &str = "main";

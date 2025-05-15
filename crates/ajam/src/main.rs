@@ -6,13 +6,12 @@ use ajam_launchctl::{LaunchAgent, LaunchControllable};
 use ajam_profile::open_profiles;
 use clap::Parser;
 use fern::Dispatch;
-use state::{State, StateConnect, StateEventsHandler};
+use state::{ActivityHandler, State, StateConnect};
 use std::{path::{Path, PathBuf}, process};
 use tokio::{task, signal};
 use colored::Colorize;
 use cli::{Cli, Command};
-
-use ajam_events::ActivityMonitor;
+use ajam_activity::Monitor;
 
 const APP_LABEL: &str = "co.myrt.ajam";
 
@@ -45,12 +44,12 @@ async fn run_listener(profiles_dir: &str) -> process::ExitCode {
 
     let state = State::with_profiles(profiles);
 
-    let (monitor, rx) = ActivityMonitor::new();
+    let (monitor, rx) = Monitor::new();
 
     let state_clone = state.clone();
     task::spawn(async move {
         print_debug!("Starting OS activity monitor listener");
-        state_clone.listen_os_events(rx).await;
+        state_clone.listen_activity_events(rx).await;
     });
 
     let state_clone = state.clone();
@@ -65,7 +64,9 @@ async fn run_listener(profiles_dir: &str) -> process::ExitCode {
         handle_signals(state_clone).await;
     });
 
-    monitor.start_listening();
+    if let Err(e) = monitor.start_listening() {
+        print_error!("Failed to start activity monitor: {}", e);
+    }
 
     process::ExitCode::SUCCESS
 }
@@ -88,7 +89,7 @@ async fn handle_signals(state: State) {
             print_info!("Screen cleared");
         },
         Err(e) => {
-            print_error!("Failed to clear screen: {}", e);
+            print_error!("Error while clearing screen: {}", e);
             process::exit(1);
         },
     }

@@ -23,7 +23,7 @@ pub enum NavigationError {
 pub const DEFAULT_PROFILE: &str = "common";
 const DEFAULT_PAGE: &str = "main";
 
-pub trait StateNavigator {
+pub trait Navigator {
     async fn navigate_to(&self, profile: &str, page: &str) -> Result<(), NavigationError>;
     async fn navigate_to_page(&self, page: &str) -> Result<(), NavigationError>;
     async fn navigate_to_default(&self) -> Result<(), NavigationError>;
@@ -35,7 +35,7 @@ pub trait StateNavigator {
     async fn navigate_to_previous_page(&self) -> Result<(), NavigationError>;
 }
 
-impl StateNavigator for State {
+impl Navigator for State {
     async fn navigate_to(
         &self,
         profile_name: &str,
