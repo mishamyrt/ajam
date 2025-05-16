@@ -5,6 +5,7 @@ mod navigation;
 mod render;
 
 use ajazz_sdk::AsyncAjazz;
+use render::MaterializedPage;
 use std::sync::atomic::AtomicU8;
 use std::sync::Arc;
 use std::{collections::HashMap, num::NonZero};
@@ -27,11 +28,14 @@ struct NavigationState {
 #[derive(Clone)]
 pub(crate) struct State {
     dev: Arc<RwLock<Option<AsyncAjazz>>>,
+    brightness: Arc<AtomicU8>,
+
     profiles: Arc<RwLock<HashMap<String, Profile>>>,
     active_profile: Arc<RwLock<String>>,
     navigation: Arc<RwLock<NavigationState>>,
-    brightness: Arc<AtomicU8>,
     image_cache: Arc<Mutex<ImageCache>>,
+    page_cache: Arc<Mutex<MaterializedPage>>,
+
     audio_output_device: Arc<RwLock<String>>,
     audio_input_device: Arc<RwLock<String>>,
 }
@@ -48,6 +52,7 @@ impl State {
             })),
             brightness: Arc::new(AtomicU8::new(100)),
             image_cache: Arc::new(Mutex::new(ImageCache::new(NonZero::new(120).unwrap()))),
+            page_cache: Arc::new(Mutex::new(MaterializedPage::default())),
             audio_output_device: Arc::new(RwLock::new(String::new())),
             audio_input_device: Arc::new(RwLock::new(String::new())),
         }

@@ -32,8 +32,8 @@ pub enum RenderError {
     ImageSourceError(#[from] ajam_profile::ImageError),
 }
 
-struct MaterializedPage(Vec<Option<DynamicImage>>);
-
+#[derive(Debug, Default, Clone)]
+pub(crate) struct MaterializedPage(Vec<Option<DynamicImage>>);
 
 impl State {
     async fn render_state(&self, state: &MaterializedPage) -> Result<(), RenderError> {
@@ -46,37 +46,64 @@ impl State {
             }
         };
 
-        dev.clear_all_button_images().await?;
+        let mut page_cache = self.page_cache.lock().await;
+
+        if page_cache.0.len() < state.0.len() {
+            page_cache.0.resize(state.0.len(), None);
+        }
+
+        let mut changed = false;
+
         for (i, image) in state.0.iter().enumerate() {
             if i >= dev.kind().key_count() as usize {
                 return Err(RenderError::ButtonIndexOutOfBounds(i));
             }
 
-            if let Some(image) = image {
-                dev.set_button_image(i as u8, image.clone()).await?;
+            if let Some(cached_image) = page_cache.0.get(i) {
+                if cached_image == image {
+                    continue;
+                }
             }
+
+            let Some(image) = image else {
+                dev.clear_button_image(i as u8).await?;
+                page_cache.0[i] = None;
+                continue;
+            };
+
+            dev.clear_button_image(i as u8).await?;
+            dev.set_button_image(i as u8, image.clone()).await?;
+
+            page_cache.0[i] = Some(image.clone());
+            changed = true;
         }
-        dev.flush().await?;
+
+        if changed {
+            dev.flush().await?;
+            *page_cache = state.clone();
+        }
 
         Ok(())
     }
 
-    async fn materialize_page(&self, profile: &Profile, page: &Page) -> Result<MaterializedPage, RenderError> {
+    async fn materialize_page(
+        &self,
+        profile: &Profile,
+        page: &Page,
+    ) -> Result<MaterializedPage, RenderError> {
         let buttons_count = profile.manifest.kind().display_key_count() as usize;
 
         let mut image_cache = self.image_cache.lock().await;
         let mut loader = profile.get_loader(&mut image_cache);
         let mut images: Vec<Option<DynamicImage>> = vec![None; buttons_count];
-        
+
         for (i, button) in page.iter_buttons(buttons_count).enumerate() {
             let Some(button) = button else {
                 return Err(RenderError::ButtonIndexOutOfBounds(i));
             };
 
             let image = match &button.image {
-                ButtonImage::Source { src } => {
-                    loader.open(src)?
-                }
+                ButtonImage::Source { src } => loader.open(src)?,
                 ButtonImage::AudioInput { audio_input } => {
                     let input_device_name = self.audio_input_device.read().await;
                     loader.open_from_image_map(audio_input, &input_device_name)?
