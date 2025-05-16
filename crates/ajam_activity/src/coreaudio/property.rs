@@ -2,7 +2,7 @@ use std::ffi::CStr;
 use std::os::raw::c_void;
 use std::{mem, ptr};
 
-use super::sys;
+use super::{sys, CoreAudioError};
 
 pub(crate) const DEFAULT_OUTPUT_DEVICE_PROPERTY_ADDRESS: sys::AudioObjectPropertyAddress =
     sys::AudioObjectPropertyAddress {
@@ -18,10 +18,17 @@ pub(crate) const DEFAULT_INPUT_DEVICE_PROPERTY_ADDRESS: sys::AudioObjectProperty
         mElement: sys::kAudioObjectPropertyElementMaster,
     };
 
+pub(crate) fn get_active_device_name(
+    address: &sys::AudioObjectPropertyAddress,
+) -> Result<String, CoreAudioError> {
+    let device_id = get_device_id(sys::kAudioObjectSystemObject, address)?;
+    get_device_name(device_id)
+}
+
 pub(crate) fn get_device_id(
     object_id: sys::AudioObjectID,
     address: &sys::AudioObjectPropertyAddress,
-) -> Option<sys::AudioDeviceID> {
+) -> Result<sys::AudioDeviceID, CoreAudioError> {
     let mut device_id: sys::AudioDeviceID = 0;
     let mut data_size = mem::size_of::<sys::AudioDeviceID>() as u32;
 
@@ -37,14 +44,16 @@ pub(crate) fn get_device_id(
     };
 
     if status != sys::kAudioHardwareNoError {
-        println!("Error getting property data: {}", status);
-        return None;
+        return Err(CoreAudioError::ReadProperty {
+            selector: address.mSelector,
+            status,
+        });
     }
 
-    Some(device_id)
+    Ok(device_id)
 }
 
-pub(crate) fn get_device_name(device_id: sys::AudioDeviceID) -> Option<String> {
+pub(crate) fn get_device_name(device_id: sys::AudioDeviceID) -> Result<String, CoreAudioError> {
     let address = sys::AudioObjectPropertyAddress {
         mSelector: sys::kAudioObjectPropertyName,
         mScope: sys::kAudioObjectPropertyScopeGlobal,
@@ -63,35 +72,14 @@ pub(crate) fn get_device_name(device_id: sys::AudioDeviceID) -> Option<String> {
     };
 
     if status != sys::kAudioHardwareNoError {
-        match status {
-            s if s == sys::kAudioHardwareUnknownPropertyError => {
-                println!(
-                    "Error: Unknown property (kAudioHardwareUnknownPropertyError: {})",
-                    status
-                );
-            }
-            s if s == sys::kAudioHardwareBadPropertySizeError => {
-                println!(
-                    "Error: Bad property size (kAudioHardwareBadPropertySizeError: {})",
-                    status
-                );
-            }
-            s if s == sys::kAudioHardwareUnspecifiedError => {
-                println!(
-                    "Error: Unspecified error (kAudioHardwareUnspecifiedError: {})",
-                    status
-                );
-            }
-            _ => {
-                println!("Error getting property size: {}", status);
-            }
-        }
-        return None;
+        return Err(CoreAudioError::GetPropertySize {
+            selector: address.mSelector,
+            size,
+        });
     }
 
     if size == 0 {
-        println!("Property size is 0");
-        return None;
+        return Err(CoreAudioError::EmptyProperty);
     }
 
     let mut cf_string_ref: sys::CFStringRef = ptr::null();
@@ -109,19 +97,20 @@ pub(crate) fn get_device_name(device_id: sys::AudioDeviceID) -> Option<String> {
     };
 
     if status != sys::kAudioHardwareNoError || cf_string_ref.is_null() {
-        println!("Error getting property data: {}", status);
-        return None;
+        return Err(CoreAudioError::ReadProperty {
+            selector: address.mSelector,
+            status,
+        });
     }
 
     unsafe {
         let cf_length = sys::CFStringGetLength(cf_string_ref);
         
         let buffer_size = sys::CFStringGetMaximumSizeForEncoding(cf_length, sys::kCFStringEncodingUTF8);
-        
+
         if buffer_size <= 0 {
-            println!("Error: invalid buffer size for string");
             sys::CFRelease(cf_string_ref);
-            return None;
+            return Err(CoreAudioError::InvalidBufferSize);
         }
         
         let mut buffer = vec![0i8; (buffer_size + 1) as usize];
@@ -136,17 +125,11 @@ pub(crate) fn get_device_name(device_id: sys::AudioDeviceID) -> Option<String> {
         sys::CFRelease(cf_string_ref);
         
         if !success {
-            println!("Failed to convert CFString to UTF-8");
-            return None;
+            return Err(CoreAudioError::ConvertString);
         }
         
         let c_str = CStr::from_ptr(buffer.as_ptr());
-        match c_str.to_str() {
-            Ok(string) => Some(string.to_owned()),
-            Err(e) => {
-                println!("String conversion error: {}", e);
-                None
-            }
-        }
+        let name = c_str.to_str()?.to_owned();
+        Ok(name)
     }
 }

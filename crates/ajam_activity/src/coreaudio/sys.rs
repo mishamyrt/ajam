@@ -10,9 +10,9 @@ pub type OSStatus = i32;
 // OSStatus common values
 pub const kAudioHardwareNoError: OSStatus = 0;
 // pub const kAudioHardwareNotRunningError: OSStatus = -14;
-pub const kAudioHardwareUnspecifiedError: OSStatus = -14000;
-pub const kAudioHardwareUnknownPropertyError: OSStatus = -14001; // = 2003332927 when interpreted as u32
-pub const kAudioHardwareBadPropertySizeError: OSStatus = -14002;
+// pub const kAudioHardwareUnspecifiedError: OSStatus = -14000;
+// pub const kAudioHardwareUnknownPropertyError: OSStatus = -14001; // = 2003332927 when interpreted as u32
+// pub const kAudioHardwareBadPropertySizeError: OSStatus = -14002;
 
 // CoreFoundation типы
 pub type CFIndex = isize;

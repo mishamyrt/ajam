@@ -34,7 +34,9 @@ impl Monitor {
         thread::spawn({
             let tx = self.event_tx.clone();
             move || {
-                start_coreaudio_listener(tx);
+                if let Err(e) = start_coreaudio_listener(tx) {
+                    println!("Error starting coreaudio listener: {:?}", e);
+                }
             }
         });
 

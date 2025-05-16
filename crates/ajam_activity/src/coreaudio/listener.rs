@@ -4,6 +4,8 @@ use std::sync::mpsc::Sender;
 use std::thread;
 use std::time::Duration;
 
+use crate::coreaudio::property::get_active_device_name;
+use crate::coreaudio::CoreAudioError;
 use crate::monitor::Event;
 
 use super::property::{
@@ -17,7 +19,13 @@ struct ListenerContext {
     tx: Sender<Event>,
 }
 
-pub(crate) fn start_coreaudio_listener(tx: Sender<Event>) {
+pub(crate) fn start_coreaudio_listener(tx: Sender<Event>) -> Result<(), CoreAudioError> {
+    let output_device_name = get_active_device_name(&DEFAULT_OUTPUT_DEVICE_PROPERTY_ADDRESS)?;
+    let input_device_name = get_active_device_name(&DEFAULT_INPUT_DEVICE_PROPERTY_ADDRESS)?;
+
+    tx.send(Event::AudioOutputChange(output_device_name))?;
+    tx.send(Event::AudioInputChange(input_device_name))?;
+
     let context = Box::new(ListenerContext { tx });
     let context_ptr = Box::into_raw(context) as *mut c_void;
 
@@ -30,8 +38,10 @@ pub(crate) fn start_coreaudio_listener(tx: Sender<Event>) {
         let addrs = unsafe { slice::from_raw_parts(addresses, number_of_addresses as usize) };
 
         for addr in addrs.iter() {
-            let device_id = get_device_id(id, addr).unwrap();
-            let Some(device_name) = get_device_name(device_id) else {
+            let Ok(device_id) = get_device_id(id, addr) else {
+                continue;
+            };
+            let Ok(device_name) = get_device_name(device_id) else {
                 continue;
             };
 
