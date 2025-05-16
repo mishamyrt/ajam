@@ -34,12 +34,8 @@ impl State {
             return None;
         };
 
-        let Some(button) = page.buttons.get(key as usize) else {
+        let Some(button) = page.get_button(key) else {
             print_warning!("no button for key: {}", key);
-            return None;
-        };
-        let Some(button) = button else {
-            print_warning!("no action for key: {}", key);
             return None;
         };
 
@@ -52,14 +48,10 @@ impl State {
             return None;
         };
 
-        match profile.encoders.get(dial as usize) {
-            Some(Some(actions)) => Some(actions.clone()),
-            Some(None) => {
-                print_warning!("no encoder action found");
-                None
-            },
+        match profile.manifest.get_encoder_actions(dial) {
+            Some(actions) => Some(actions.clone()),
             None => {
-                print_warning!("no encoder config found");
+                print_warning!("no encoder action found");
                 None
             }
         }
@@ -67,7 +59,7 @@ impl State {
 
     async fn execute_action(&self, action: Action, performer: &mut Performer, release: bool) {
         match action {
-            Action::Keys(keys) => {
+            Action::Keys { keys } => {
                 if let Err(e) = {
                     if release {
                         performer.perform(&keys)
@@ -78,15 +70,13 @@ impl State {
                     print_error!("error pressing key: {:?}", e);
                 }
             }
-            Action::Command(command) => {
+            Action::Command { command } => {
                 if let Err(e) = run_command(&command).await {
                     print_error!("error running command: {:?}", e);
                 }
             }
-            Action::Navigate(target_page_name) => {
-                if let Err(e) =
-                    self.navigate_to_page(&target_page_name).await
-                {
+            Action::Navigate { navigate } => {
+                if let Err(e) = self.navigate_to_page(&navigate).await {
                     print_error!("error navigating to page: {:?}", e);
                 }
             }
@@ -132,7 +122,7 @@ impl StateEventsHandler for State {
                                     continue;
                                 };
 
-                                if let Action::Keys(keys) = &action {
+                                if let Action::Keys { keys } = &action {
                                     if let Err(e) = performer.release(keys) {
                                         print_error!("error releasing key: {:?}", e);
                                     }
@@ -150,8 +140,8 @@ impl StateEventsHandler for State {
                                     encoder_actions.minus
                                 };
 
-                                if let Action::Keys(combo) = &action {
-                                    if combo.is_illumination() {
+                                if let Action::Keys { keys } = &action {
+                                    if keys.is_illumination() {
                                         if let Err(e) = self.set_brightness(ticks * 5).await {
                                             print_error!("error setting brightness: {:?}", e);
                                         }

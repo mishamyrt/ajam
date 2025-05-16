@@ -39,7 +39,7 @@ async fn run_listener(profiles_dir: &str) -> process::ExitCode {
     };
     print_info!("Loaded {} profiles", profiles.len());
     for (app_id, profile) in profiles.iter() {
-        print_warning!("App: {} - {} pages", app_id, profile.pages.len());
+        print_warning!("App: {} - {} pages", app_id, profile.manifest.pages.len());
     }
 
     let state = State::with_profiles(profiles);

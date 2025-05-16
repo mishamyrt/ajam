@@ -51,7 +51,7 @@ impl Navigator for State {
             }
         };
 
-        let Some(page) = profile.pages.get(page_name) else {
+        let Some(page) = profile.manifest.get_page(page_name) else {
             return Err(NavigationError::NoPage);
         };
 
@@ -61,7 +61,7 @@ impl Navigator for State {
             navigation_guard.page = page_name.to_string();
         }
 
-        self.render_page(page).await?;
+        self.render_page(&profile, page).await?;
         Ok(())
     }
 
@@ -155,10 +155,12 @@ impl State {
     async fn navigate_page_offset(&self, offset: isize) -> Result<(), NavigationError> {
         let (profile_name, page_name) = self.get_current_profile_and_page().await;
         let profile = self.get_profile(&profile_name).await?;
-        let len = profile.pages_order.len() as isize;
-        let current_index = profile.pages_order.iter().position(|p| p == &page_name).unwrap() as isize;
+
+        let len = profile.manifest.pages.len() as isize;
+        let current_index = profile.manifest.page_index(&page_name).unwrap() as isize;
         let new_index = (current_index + offset + len) % len;
-        let new_page = &profile.pages_order[new_index as usize];
-        self.navigate_to(&profile_name, new_page).await
+
+        let new_page_name = profile.manifest.pages_order[new_index as usize].clone();
+        self.navigate_to(&profile_name, &new_page_name).await
     }
 }

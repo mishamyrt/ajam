@@ -2,55 +2,69 @@ pages_order:
   - main
   - debug
 
+device: akp03
+
 pages:
   main:
     0:
-      image: main/terminal.jpg
+      image:
+        src: main/terminal.jpg
       action:
         keys: ctrl+\
     1:
-      image: main/edit.jpg
+      image:
+        src: main/edit.jpg
       action:
         keys: ctrl+k
     2:
-      image: main/agent.jpg
+      image:
+        src: main/agent.jpg
       action:
         keys: page_up
     3:
-      image: main/debug.jpg
+      image:
+        src: main/debug.jpg
       action:
         navigate: debug
     4:
-      image: main/search.jpg
+      image:
+        src: main/search.jpg
       action:
         keys: cmd+shift+f
     5:
-      image: main/ask.jpg
+      image:
+        src: main/ask.jpg
       action:
         keys: home
   debug:
     0:
-      image: debug/start.jpg
+      image:
+        src: debug/start.jpg
       action:
         keys: f5
     1:
-      image: debug/step_over.jpg
+      image:
+        src: debug/step_over.jpg
       action:
         keys: f10
     2:
-      image: debug/step_into.jpg
+      image:
+        src: debug/step_into.jpg
       action:
         keys: f11
     3:
-      image: debug/back.jpg
+      image:
+        src: debug/back.jpg
       action:
         navigate: main
     4:
-      image: debug/stop.jpg
+      image:
+        src: debug/stop.jpg
       action:
         keys: shift+f5
     5:
-      image: debug/restart.jpg
+      image:
+        src: debug/restart.jpg
       action:
         keys: shift+cmd+f5
 

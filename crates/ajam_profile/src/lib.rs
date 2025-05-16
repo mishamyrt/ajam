@@ -1,10 +1,11 @@
 mod manifest;
 mod profile;
-mod materialized_page;
+mod image;
 
-pub use profile::{Profile, Page, Action, EncoderActions, open_profiles};
-pub use manifest::{Manifest, ButtonConfig};
-pub use materialized_page::{MaterializedPage, ImageLoader, MaterializedPageError};
+pub use profile::{Profile, open_profiles};
+pub use manifest::{Manifest, EncoderActions, Action, Page, Button};
+pub use image::{ButtonImage, ButtonImageLoader, ImageError, ImageLoader, ImageCache};
+
 use thiserror::Error;
 
 #[derive(Error, Debug)]

@@ -7,8 +7,7 @@ use crate::{print_debug, print_error};
 
 
 use super::{
-    navigation::{Navigator, DEFAULT_PROFILE},
-    State,
+    navigation::{Navigator, DEFAULT_PROFILE}, render::StateRender, State
 };
 
 pub(crate) trait ActivityHandler {
@@ -39,10 +38,22 @@ impl ActivityHandler for State {
                     }
                 }
                 Event::AudioOutputChange(device_name) => {
+                    self.set_audio_output_device(&device_name).await;
+
                     print_debug!("Audio output changed: {}", device_name);
+
+                    if let Err(e) = self.render_active_page().await {
+                        print_error!("error rendering active page: {:?}", e);
+                    }
                 }
                 Event::AudioInputChange(device_name) => {
+                    self.set_audio_input_device(&device_name).await;
+
                     print_debug!("Audio input changed: {}", device_name);
+
+                    if let Err(e) = self.render_active_page().await {
+                        print_error!("error rendering active page: {:?}", e);
+                    }
                 }
             }
         }

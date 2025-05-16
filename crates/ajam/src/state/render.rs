@@ -1,8 +1,9 @@
 use std::sync::atomic::Ordering;
 
+use image::DynamicImage;
 use thiserror::Error;
 
-use ajam_profile::{MaterializedPage, Page, Profile};
+use ajam_profile::{ButtonImage, ImageLoader, Page, Profile};
 use ajazz_sdk::AjazzError;
 
 use crate::State;
@@ -25,8 +26,14 @@ pub enum RenderError {
     NoActivePage,
 
     #[error("error loading page")]
-    PageLoadError(#[from] ajam_profile::MaterializedPageError),
+    PageLoadError(#[from] ajam_profile::ProfileError),
+
+    #[error("error loading image from source: {0}")]
+    ImageSourceError(#[from] ajam_profile::ImageError),
 }
+
+struct MaterializedPage(Vec<Option<DynamicImage>>);
+
 
 impl State {
     async fn render_state(&self, state: &MaterializedPage) -> Result<(), RenderError> {
@@ -53,10 +60,41 @@ impl State {
 
         Ok(())
     }
+
+    async fn materialize_page(&self, profile: &Profile, page: &Page) -> Result<MaterializedPage, RenderError> {
+        let buttons_count = profile.manifest.kind().display_key_count() as usize;
+
+        let mut image_cache = self.image_cache.lock().await;
+        let mut loader = profile.get_loader(&mut image_cache);
+        let mut images: Vec<Option<DynamicImage>> = vec![None; buttons_count];
+        
+        for (i, button) in page.iter_buttons(buttons_count).enumerate() {
+            let Some(button) = button else {
+                return Err(RenderError::ButtonIndexOutOfBounds(i));
+            };
+
+            let image = match &button.image {
+                ButtonImage::Source { src } => {
+                    loader.open(src)?
+                }
+                ButtonImage::AudioInput { audio_input } => {
+                    let input_device_name = self.audio_input_device.read().await;
+                    loader.open_from_image_map(audio_input, &input_device_name)?
+                }
+                ButtonImage::AudioOutput { audio_output } => {
+                    let output_device_name = self.audio_output_device.read().await;
+                    loader.open_from_image_map(audio_output, &output_device_name)?
+                }
+            };
+            images[i] = Some(image)
+        }
+
+        Ok(MaterializedPage(images))
+    }
 }
 
 pub trait StateRender {
-    async fn render_page(&self, page: &Page) -> Result<(), RenderError>;
+    async fn render_page(&self, profile: &Profile, page: &Page) -> Result<(), RenderError>;
     async fn render_active_page(&self) -> Result<(), RenderError>;
 
     async fn apply_brightness(&self) -> Result<(), RenderError>;
@@ -79,19 +117,16 @@ impl StateRender for State {
         self.get_page(&profile, &page).await
     }
 
-    async fn render_page(&self, page: &Page) -> Result<(), RenderError> {
-        let page = {
-            let mut image_loader = self.image_loader.lock().await;
-            image_loader.open_page(page).await?
-        };
-        self.render_state(&page).await
+    async fn render_page(&self, profile: &Profile, page: &Page) -> Result<(), RenderError> {
+        let materialized_page = self.materialize_page(profile, page).await?;
+        self.render_state(&materialized_page).await
     }
 
     async fn render_active_page(&self) -> Result<(), RenderError> {
-        let Some((_, page)) = self.get_active_page().await else {
+        let Some((profile, page)) = self.get_active_page().await else {
             return Err(RenderError::NoActivePage);
         };
-        self.render_page(&page).await
+        self.render_page(&profile, &page).await
     }
 
     async fn apply_brightness(&self) -> Result<(), RenderError> {

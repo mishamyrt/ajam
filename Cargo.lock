@@ -79,6 +79,7 @@ name = "ajam_profile"
 version = "0.1.0"
 dependencies = [
  "ajam_keypress",
+ "ajazz-sdk",
  "enigo",
  "image",
  "lru",

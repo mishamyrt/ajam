@@ -1,19 +1,19 @@
+mod activity;
 mod connect;
 mod events;
-mod render;
 mod navigation;
-mod activity;
+mod render;
 
 use ajazz_sdk::AsyncAjazz;
-use std::collections::HashMap;
 use std::sync::atomic::AtomicU8;
 use std::sync::Arc;
+use std::{collections::HashMap, num::NonZero};
 use tokio::sync::{Mutex, RwLock};
 
-use ajam_profile::{ImageLoader, Page, Profile};
+use ajam_profile::{ImageCache, Page, Profile};
 
-pub(crate) use connect::StateConnect;
 pub(crate) use activity::ActivityHandler;
+pub(crate) use connect::StateConnect;
 
 pub const DEFAULT_PROFILE: &str = "common";
 pub const DEFAULT_PAGE: &str = "main";
@@ -31,7 +31,9 @@ pub(crate) struct State {
     active_profile: Arc<RwLock<String>>,
     navigation: Arc<RwLock<NavigationState>>,
     brightness: Arc<AtomicU8>,
-    image_loader: Arc<Mutex<ImageLoader>>,
+    image_cache: Arc<Mutex<ImageCache>>,
+    audio_output_device: Arc<RwLock<String>>,
+    audio_input_device: Arc<RwLock<String>>,
 }
 
 impl State {
@@ -45,7 +47,9 @@ impl State {
                 page: DEFAULT_PAGE.to_string(),
             })),
             brightness: Arc::new(AtomicU8::new(100)),
-            image_loader: Arc::new(Mutex::new(ImageLoader::new(120))),
+            image_cache: Arc::new(Mutex::new(ImageCache::new(NonZero::new(120).unwrap()))),
+            audio_output_device: Arc::new(RwLock::new(String::new())),
+            audio_input_device: Arc::new(RwLock::new(String::new())),
         }
     }
 
@@ -53,8 +57,16 @@ impl State {
         let profiles_guard = self.profiles.read().await;
 
         let profile = profiles_guard.get(profile)?;
-        let page = profile.pages.get(page)?;
+        let page = profile.manifest.get_page(page)?;
 
         Some((profile.clone(), page.clone()))
+    }
+
+    async fn set_audio_output_device(&self, device: &str) {
+        *self.audio_output_device.write().await = device.to_string();
+    }
+
+    async fn set_audio_input_device(&self, device: &str) {
+        *self.audio_input_device.write().await = device.to_string();
     }
 }

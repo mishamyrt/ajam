@@ -2,50 +2,74 @@ pages_order:
   - main
   - dev
 
+device: akp03
+
 pages:
   main:
     0:
-      image: main/music.jpg
+      image:
+        src: main/bitwarden.jpg
       action:
-        command: open -a /Applications/YandexMusic.app
+        command: open -a /Applications/Bitwarden.app
     1:
-      image: main/telegram.jpg
+      image:
+        src: main/telegram.jpg
       action:
         command: open -a /Applications/Telegram.app
     2:
-      image: main/amneziavpn.jpg
+      image:
+        audio_output:
+          "MacBook Pro Speakers": "audio/output-macbook.jpg"
+          "Scarlett Solo 4th Gen": "audio/output-speakers.jpg"
+          "Galaxy Buds3 (9AD6)": "audio/output-buds.jpg"
+          default: "audio/output-unknown.jpg"
       action:
         command: open -a /Applications/AmneziaVPN.app
     3:
-      image: main/mail.jpg
+      image:
+        src: main/mail.jpg
       action:
         command: open -a /System/Applications/Mail.app
     4:
-      image: main/bitwarden.jpg
-      action:
-        command: open -a /Applications/Bitwarden.app
-    5:
-      image: main/boltai.jpg
+      image:
+        src: main/boltai.jpg
       action:
         command: open -a /Applications/BoltAI.app
+    5:
+      image:
+        audio_input:
+          "Galaxy Buds3 (9AD6)": "audio/input-buds.jpg"
+          "MacBook Pro Microphone": "audio/input-macbook.jpg"
+          "Scarlett Solo 4th Gen": "audio/input-microphone.jpg"
+          default: "audio/input-unknown.jpg"
+      action:
+        command: open -a /Applications/YandexMusic.app
   dev:
     0:
-      image: dev/cursor.jpg
+      image:
+        src: dev/cursor.jpg
       action:
         command: open -a /Applications/Cursor.app
     1:
-      image: dev/docker.jpg
+      image:
+        src: dev/docker.jpg
       action:
         command: open -a /Applications/Docker.app
     2:
-      image: dev/iterm.jpg
+      image:
+        src: dev/iterm.jpg
       action:
         command: open -a /Applications/iTerm.app
     3:
-      image: dev/sqlpro.jpg
+      image:
+        src: dev/sqlpro.jpg
       action:
         command: open -a '/Applications/SQLPro for Postgres.app'
-
+    4:
+      image:
+        src: main/amneziavpn.jpg
+      action:
+        command: open -a /Applications/AmneziaVPN.app
 encoders:
   0:
     minus:
